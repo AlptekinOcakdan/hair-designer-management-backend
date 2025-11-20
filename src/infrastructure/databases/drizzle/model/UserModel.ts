@@ -1,18 +1,17 @@
-// src/infrastructure/databases/drizzle/schema/UserSchema.ts
 import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { InferSelectModel, InferInsertModel } from 'drizzle-orm';
 
-// Tablo Tanımı (Mongoose Schema yerine)
 export const usersTable = pgTable('users', {
-    id: uuid('id').defaultRandom().primaryKey(), // _id yerine
-    username: text('username').notNull(),
+    id: uuid('id').defaultRandom().primaryKey(),
+    firstname: text('firstname').notNull(),
+    lastname: text('lastname').notNull(),
     email: text('email').notNull().unique(),
     password: text('password').notNull(),
-    refreshToken: text('refresh_token'), // camelCase yerine veritabanında snake_case önerilir ama tercih senin
+    phoneNumber: text('phone_number').notNull(),
+    refreshToken: text('refresh_token').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').$onUpdate(() => new Date()),
 });
 
-// UserDocument arayüzünü korumak için Drizzle'ın "Infer" özelliğini kullanıyoruz.
-// Bu sayede interface'i elle yazmana gerek kalmaz, şemadan otomatik üretilir.
-export type UserDocument = InferSelectModel<typeof usersTable>; // Veritabanından gelen okuma tipi
-export type UserInsert = InferInsertModel<typeof usersTable>;   // Veritabanına yazma tipi
+export type UserDocument = InferSelectModel<typeof usersTable>;
+export type UserInsert = InferInsertModel<typeof usersTable>;

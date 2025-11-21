@@ -3,6 +3,12 @@ export class SalonStaff {
         public salonId: string,
         public userId: string,
         public roleId: string,
+        public avalaibleForAppointments: boolean,
+        public availableWeekDays: string[],
+        public availableDays: string[],
+        public availability: boolean,
+        public availableHours: string[],
+        public nonAvailableRange: string[],
         public createdAt: Date,
         public updatedAt: Date | null
     ) {}

@@ -1,100 +1,129 @@
-import { eq } from 'drizzle-orm';
-import bcryptjs from 'bcryptjs';
 import { IUserRepository } from '../../../domain/repositories/IUserRepository';
 import { User } from '../../../domain/entities/User';
-import {UserDocument, UserInsert, usersTable} from "./model/UserModel";
-import {db} from "../../../config/DrizzleConfig";
+import {UserDocument, UserInsert, usersTable} from "./model";
+import {NeonHttpDatabase} from "drizzle-orm/neon-http";
+import * as schema from "./model/UserModel";
+import {eq} from "drizzle-orm";
 
 export class DrizzleUserRepository implements IUserRepository {
+    private readonly table: typeof usersTable;
 
-    // Entity'den Drizzle Insert Tipine Dönüştürücü (Mapper)
+    constructor(
+        private readonly db: NeonHttpDatabase<typeof schema>,
+        table: typeof usersTable
+    ) {
+        this.table = table;
+    }
     private toPersistence(user: User): UserInsert {
         return {
-            id: user.id ? user.id : undefined, // Eğer ID yoksa DB üretsin
-            username: user.username,
+            id: user.id ? user.id : undefined,
+            firstname: user.firstname,
+            lastname: user.lastname,
             email: user.email,
             password: user.password,
+            phoneNumber: user.phoneNumber,
             refreshToken: user.refreshToken,
-            createdAt: user.createdAt || new Date(),
+            createdAt: user.createdAt ? user.createdAt : undefined,
+            updatedAt: user.updatedAt ? user.updatedAt : undefined,
         };
     }
 
-    // Drizzle Document Tipinden Domain Entity'sine Dönüştürücü (Mapper)
     private toDomain(userDoc: UserDocument): User {
         return new User(
             userDoc.id,
-            userDoc.username,
+            userDoc.firstname,
+            userDoc.lastname,
             userDoc.email,
             userDoc.password,
-            userDoc.refreshToken || "", // Nullable kontrolü
-            userDoc.createdAt
+            userDoc.phoneNumber,
+            userDoc.emailVerified,
+            userDoc.phoneVerified,
+            userDoc.refreshToken,
+            userDoc.TOSAccepted,
+            userDoc.createdAt,
+            userDoc.updatedAt
         );
     }
 
-    async create(user: User): Promise<UserDocument> {
-        // Mongoose pre-save hook yerine buraya ekliyoruz:
-        const salt = await bcryptjs.genSalt(10);
-        const hashedPassword = await bcryptjs.hash(user.password, salt);
-
-        // Şifreyi güncelleyerek persistence nesnesini hazırla
+    async create(user: User): Promise<User> {
         const persistenceUser = this.toPersistence(user);
-        persistenceUser.password = hashedPassword;
 
-        // Veritabanına yaz ve yazılan veriyi geri döndür (returning)
-        const [createdUser] = await db
-            .insert(usersTable)
+        const [insertedUser] = await this.db
+            .insert(this.table)
             .values(persistenceUser)
             .returning();
 
-        return createdUser;
+        return this.toDomain(insertedUser);
     }
 
+    // --- READ (ID ile Bulma) ---
     async findById(id: string): Promise<User | null> {
-        const [user] = await db
+        const [userFound] = await this.db
             .select()
-            .from(usersTable)
-            .where(eq(usersTable.id, id))
-            .limit(1);
+            .from(this.table)
+            .where(eq(this.table.id, id));
 
-        if (!user) return null;
-        return this.toDomain(user);
+        if (!userFound) return null;
+
+        return this.toDomain(userFound);
     }
 
-    async findByEmail(email: string): Promise<UserDocument | null> {
-        const [user] = await db
+    // --- READ (Email ile Bulma) ---
+    async findByEmail(email: string): Promise<User | null> {
+        const [userFound] = await this.db
             .select()
-            .from(usersTable)
-            .where(eq(usersTable.email, email))
-            .limit(1);
+            .from(this.table)
+            .where(eq(this.table.email, email));
 
-        if (!user) return null;
-        return user;
+        if (!userFound) return null;
+
+        return this.toDomain(userFound);
     }
 
-    async findAll(): Promise<User[]> {
-        const users = await db.select().from(usersTable);
-        return users.map(user => this.toDomain(user));
-    }
-
-    async findByRefreshToken(refreshToken: string): Promise<UserDocument | null> {
-        const [user] = await db
+    // --- READ (Refresh Token ile Bulma) ---
+    async findByRefreshToken(refreshToken: string): Promise<User | null> {
+        const [userFound] = await this.db
             .select()
-            .from(usersTable)
-            .where(eq(usersTable.refreshToken, refreshToken))
-            .limit(1);
+            .from(this.table)
+            .where(eq(this.table.refreshToken, refreshToken));
 
-        if (!user) return null;
-        return user;
+        if (!userFound) return null;
+
+        return this.toDomain(userFound);
     }
 
-    async findByIdAndUpdateRefreshToken(id: string, refreshToken: string): Promise<UserDocument | null> {
-        const [updatedUser] = await db
-            .update(usersTable)
-            .set({ refreshToken: refreshToken })
-            .where(eq(usersTable.id, id))
-            .returning()
+    // --- READ ALL (Tümünü Getir) ---
+    // NOT: Interface'inde UserDocument[] döneceğini belirtmişsin.
+    // Genelde burası da User[] (Domain Entity) döner ama isteğine sadık kalarak raw data dönüyorum.
+    async findAll(): Promise<UserDocument[]> {
+        return this.db.select().from(this.table);
+    }
 
-        if (!updatedUser) return null;
-        return updatedUser;
+    // --- UPDATE (Güncelleme) ---
+    async update(user: User): Promise<User> {
+        // Güncelleme yapabilmek için ID'nin varlığından emin olmalıyız
+        if (!user.id) {
+            throw new Error("User ID is required for update operation.");
+        }
+
+        // Domain entity'yi DB formatına çevir
+        const persistenceUser = this.toPersistence(user);
+
+        // Update sorgusu: ID'si eşleşen satırı güncelle ve yeni halini döndür
+        const [updatedUser] = await this.db
+            .update(this.table)
+            .set(persistenceUser)
+            .where(eq(this.table.id, user.id))
+            .returning();
+
+        // Güncellenen veriyi tekrar Domain formatına çevirip dön
+        return this.toDomain(updatedUser);
+    }
+
+    // --- DELETE (Silme) ---
+    async delete(id: string): Promise<void> {
+        await this.db
+            .delete(this.table)
+            .where(eq(this.table.id, id));
     }
 }

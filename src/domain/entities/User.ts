@@ -6,7 +6,10 @@ export class User {
         public email: string,
         public password:string,
         public phoneNumber: string,
+        public emailVerified: boolean,
+        public phoneVerified: boolean,
         public refreshToken: string,
+        public TOSAccepted: boolean,
         public createdAt: Date,
         public updatedAt: Date | null
     ) {}

@@ -17,7 +17,6 @@ export const salonStaffsTable = pgTable('salon_staffs', {
     updatedAt: timestamp('updated_at').$onUpdate(() => new Date()),
 }, (table) => {
     return {
-        // Composite Primary Key: Bir kullanıcı bir salonda sadece bir kez tanımlanabilir (rolü değişebilir ama satır tektir)
         pk: primaryKey({ columns: [table.salonId, table.userId] }),
     };
 });

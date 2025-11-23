@@ -1,62 +1,70 @@
-import express, { Application } from 'express';
+import express, {Application} from 'express';
 import http from 'http';
-import { Server as SocketIOServer, Socket } from 'socket.io';
-import { UserRoutes } from '../../interfaces/routes/UserRoutes';
-import { SocketHandler } from '../../interfaces/sockets/SocketHandler';
-import { errorHandlerMiddleware } from '../../interfaces/middlewares/ErrorHandlerMiddleware';
+import {Server as SocketIOServer, Socket} from 'socket.io';
+import {UserRoutes} from '../../interfaces/routes/UserRoutes';
+import {SocketHandler} from '../../interfaces/sockets/SocketHandler';
+import {errorHandlerMiddleware} from '../../interfaces/middlewares/ErrorHandlerMiddleware';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import {AuthRoutes} from "../../interfaces/routes/AuthRoutes";
+import {API_PREFIX} from "../../interfaces/utils/constants";
 
 export class Server {
-  private app: Application;
-  private port: number;
-  private httpServer: http.Server;
-  private io: SocketIOServer;
+    private readonly app: Application;
+    private readonly port: number;
+    private readonly httpServer: http.Server;
+    private io: SocketIOServer;
 
-  constructor(port: number, userRoutes: UserRoutes) {
-    this.app = express();
-    this.port = port;
-    this.httpServer = http.createServer(this.app);
-    this.io = new SocketIOServer(this.httpServer);
+    constructor(port: number, userRoutes: UserRoutes, authRoutes: AuthRoutes) {
+        this.app = express();
+        this.port = port;
+        this.httpServer = http.createServer(this.app);
+        this.io = new SocketIOServer(this.httpServer);
 
-    this.configureMiddleware();
-    this.app.use('/api/auth', userRoutes.router);
+        this.configureMiddleware();
+        const routes = express.Router();
 
-    // Initialize Socket.IO
-    this.initializeSocketIO();
+        routes.use('/auth', authRoutes.router);
+        routes.use('/users', userRoutes.router);
 
-    // Use error handling middleware
-    this.app.use(errorHandlerMiddleware);
-  }
+        // Initialize Socket.IO
+        this.initializeSocketIO();
 
-  private configureMiddleware() {
-    this.app.use(cookieParser());
-    this.app.use(cors());
-    this.app.use(express.json());
-    this.app.use(express.urlencoded({extended:true}));
-  }
+        this.app.use(`${API_PREFIX}`, routes)
 
-  private initializeSocketIO() {
-    this.io.on('connection', (socket: Socket) => {
-      console.log(`Client connected: ${socket.id}`);
 
-      // Handle socket events
-      SocketHandler.handleConnection(socket);
+        // Use error handling middleware
+        this.app.use(errorHandlerMiddleware);
+    }
 
-      socket.on('disconnect', () => {
-        console.log(`Client disconnected: ${socket.id}`);
-      });
-    });
-  }
+    private configureMiddleware() {
+        this.app.use(cors());
+        this.app.use(express.json());
+        this.app.use(cookieParser());
+        this.app.use(express.urlencoded({extended: true}));
+    }
 
-  start() {
-    this.httpServer.listen(this.port, () => {
-      console.log(`Server running on port ${this.port}`);
-    });
-  }
+    private initializeSocketIO() {
+        this.io.on('connection', (socket: Socket) => {
+            console.log(`Client connected: ${socket.id}`);
 
-  // Method to emit events
-  emitEvent(event: string, data: any) {
-    this.io.emit(event, data);
-  }
+            // Handle socket events
+            SocketHandler.handleConnection(socket);
+
+            socket.on('disconnect', () => {
+                console.log(`Client disconnected: ${socket.id}`);
+            });
+        });
+    }
+
+    start() {
+        this.httpServer.listen(this.port, () => {
+            console.log(`Server running on port ${this.port}`);
+        });
+    }
+
+    // Method to emit events
+    emitEvent(event: string, data: any) {
+        this.io.emit(event, data);
+    }
 }

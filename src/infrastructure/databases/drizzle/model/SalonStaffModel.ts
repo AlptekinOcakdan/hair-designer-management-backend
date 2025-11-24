@@ -2,6 +2,7 @@ import {pgTable, uuid, timestamp, primaryKey, text, boolean} from "drizzle-orm/p
 import {salonsTable} from "./SalonModel";
 import {usersTable} from "./UserModel";
 import {rolesTable} from "./RolesModel";
+import {InferInsertModel, InferSelectModel} from "drizzle-orm";
 
 export const salonStaffsTable = pgTable('salon_staffs', {
     salonId: uuid('salon_id').references(() => salonsTable.id).notNull(),
@@ -20,3 +21,6 @@ export const salonStaffsTable = pgTable('salon_staffs', {
         pk: primaryKey({ columns: [table.salonId, table.userId] }),
     };
 });
+
+export type SalonStaffDocument = InferSelectModel<typeof salonStaffsTable>;
+export type SalonStaffInsert = InferInsertModel<typeof salonStaffsTable>;

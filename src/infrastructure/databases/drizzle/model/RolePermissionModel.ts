@@ -1,6 +1,7 @@
 import { pgTable, uuid, timestamp, primaryKey } from "drizzle-orm/pg-core";
 import {rolesTable} from "./RolesModel";
 import {permissionsTable} from "./PermissionModel";
+import {InferInsertModel, InferSelectModel} from "drizzle-orm";
 
 export const rolePermissionsTable = pgTable('role_permissions', {
     roleId: uuid('role_id').references(() => rolesTable.id).notNull(),
@@ -12,3 +13,6 @@ export const rolePermissionsTable = pgTable('role_permissions', {
         pk: primaryKey({ columns: [table.roleId, table.permissionId] }),
     };
 });
+
+export type RolePermissionDocument = InferSelectModel<typeof rolePermissionsTable>;
+export type RolePermissionInsert = InferInsertModel<typeof rolePermissionsTable>;

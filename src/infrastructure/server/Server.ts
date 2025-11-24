@@ -8,6 +8,14 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import {AuthRoutes} from "../../interfaces/routes/AuthRoutes";
 import {API_PREFIX} from "../../interfaces/utils/constants";
+import {OrganisationRoutes} from "../../interfaces/routes/OrganisationRoutes";
+import {SalonRoutes} from "../../interfaces/routes/SalonRoutes";
+import {ProcedureRoutes} from "../../interfaces/routes/ProcedureRoutes";
+import {PermissionRoutes} from "../../interfaces/routes/PermissionRoutes";
+import {RoleRoutes} from "../../interfaces/routes/RoleRoutes";
+import {corsOptions} from "../../config/CORSConfig";
+import {limiter} from "../../config/RateLimitConfig";
+import {setupSwagger} from "../../config/SwaggerConfig";
 
 export class Server {
     private readonly app: Application;
@@ -15,7 +23,7 @@ export class Server {
     private readonly httpServer: http.Server;
     private io: SocketIOServer;
 
-    constructor(port: number, userRoutes: UserRoutes, authRoutes: AuthRoutes) {
+    constructor(port: number, userRoutes: UserRoutes, authRoutes: AuthRoutes, organisationRoutes: OrganisationRoutes, salonRoutes: SalonRoutes, procedureRoutes: ProcedureRoutes, roleRoutes: RoleRoutes, permissionRoutes: PermissionRoutes) {
         this.app = express();
         this.port = port;
         this.httpServer = http.createServer(this.app);
@@ -26,6 +34,11 @@ export class Server {
 
         routes.use('/auth', authRoutes.router);
         routes.use('/users', userRoutes.router);
+        routes.use('/organisations', organisationRoutes.router);
+        routes.use('/salons', salonRoutes.router);
+        routes.use('/procedures', procedureRoutes.router);
+        routes.use('/roles', roleRoutes.router);
+        routes.use('/permissions', permissionRoutes.router);
 
         // Initialize Socket.IO
         this.initializeSocketIO();
@@ -35,13 +48,15 @@ export class Server {
 
         // Use error handling middleware
         this.app.use(errorHandlerMiddleware);
+        setupSwagger(this.app as express.Express);
     }
 
     private configureMiddleware() {
-        this.app.use(cors());
-        this.app.use(express.json());
         this.app.use(cookieParser());
+        this.app.use(cors(corsOptions));
+        this.app.use(express.json());
         this.app.use(express.urlencoded({extended: true}));
+        this.app.use(limiter)
     }
 
     private initializeSocketIO() {

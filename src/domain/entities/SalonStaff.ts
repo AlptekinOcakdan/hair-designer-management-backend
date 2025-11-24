@@ -5,8 +5,6 @@ export class SalonStaff {
         public roleId: string,
         public avalaibleForAppointments: boolean,
         public availableWeekDays: string[],
-        public availableDays: string[],
-        public availability: boolean,
         public availableHours: string[],
         public nonAvailableRange: string[],
         public createdAt: Date,

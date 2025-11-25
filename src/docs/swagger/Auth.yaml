@@ -44,7 +44,7 @@ components:
 
     RegisterRequest:
       type: object
-      required: [firstname, lastname, email, password, TOSAccepted]
+      required: [firstname, lastname, email, TOSAccepted]
       properties:
         firstname:
           type: string
@@ -53,23 +53,16 @@ components:
         email:
           type: string
           format: email
-        password:
-          type: string
         TOSAccepted:
           type: boolean
 
     LoginRequest:
       type: object
-      required: [email, password]
+      required: [email]
       properties:
         email:
           type: string
           format: email
-        password:
-          type: string
-        rememberMe:
-          type: boolean
-          default: false
 
     LoginResponse:
       type: object
@@ -78,6 +71,22 @@ components:
           $ref: '#/components/schemas/User'
         accessToken:
           type: string
+
+    VerifyOTPRequest:
+      type: object
+      required: [email, otpCode]
+      properties:
+        email:
+          type: string
+          format: email
+          description: The user's email address.
+        otpCode:
+          type: string
+          description: The 6-digit code sent to the user's email.
+        rememberMe:
+          type: boolean
+          description: If true, the refresh token will have a longer expiration.
+          default: false
 
     RefreshTokenRequest:
       type: object
@@ -124,7 +133,8 @@ paths:
   /auth/register:
     post:
       tags: [Auth]
-      summary: Register a new user
+      summary: Start user registration with OTP
+      description: Creates a new user and sends a one-time password (OTP) to their email to start the verification process.
       requestBody:
         required: true
         content:
@@ -133,7 +143,7 @@ paths:
               $ref: '#/components/schemas/RegisterRequest'
       responses:
         '201':
-          description: User created and verification mail sent
+          description: User created and OTP sent. The user object is returned.
           content:
             application/json:
               schema:
@@ -141,15 +151,14 @@ paths:
                 properties:
                   user:
                     $ref: '#/components/schemas/User'
-                  accessToken:
-                    type: string
         '400':
           description: Validation error or email already in use
 
   /auth/login:
     post:
       tags: [Auth]
-      summary: Login user
+      summary: Start user login with OTP
+      description: Sends a one-time password (OTP) to the user's email to start the login process.
       requestBody:
         required: true
         content:
@@ -158,13 +167,37 @@ paths:
               $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
-          description: Logged in successfully (refresh token set as cookie)
+          description: OTP sent successfully. The user object is returned.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Invalid credentials (user not found)
+
+  /auth/verify-otp:
+    post:
+      tags: [Auth]
+      summary: Verify OTP and complete login/registration
+      description: Verifies the OTP for the given email and, if successful, logs the user in by returning access and refresh tokens.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyOTPRequest'
+      responses:
+        '200':
+          description: OTP verified and logged in successfully.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/LoginResponse'
-        '401':
-          description: Invalid credentials
+        '400':
+          description: Invalid or expired OTP.
 
   /auth/logout:
     post:
@@ -280,4 +313,3 @@ paths:
       responses:
         '204':
           description: Phone number verified
-

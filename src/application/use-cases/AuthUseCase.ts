@@ -10,17 +10,22 @@ import {
     verifyAccessToken,
     verifyRefreshToken
 } from "../../interfaces/utils/jwtUtils";
+import {IOTPRepository} from "../../domain/repositories/IOTPRepository";
+import {generateOTP, getOTPExpiration} from "../../interfaces/utils/OTPUtils";
+import {OTP} from "../../domain/entities/OTP";
+import {randomUUID} from "crypto";
 
 export class AuthUseCase implements IAuthUseCase {
     constructor(
         private readonly userRepository: IUserRepository,
         private readonly hashService: IHashService,
-        private readonly mailService: IMailService
+        private readonly mailService: IMailService,
+        private readonly otpRepository: IOTPRepository
     ) {
     }
 
-    async register(firstname: string, lastname: string, email: string, password: string, TOSAccepted: boolean): Promise<{
-        user: User, accessToken: string, refreshToken: string
+    async register(firstname: string, lastname: string, email: string, TOSAccepted: boolean): Promise<{
+        user: User
     }> {
         // 1. Kullanıcı zaten var mı?
         const existingUser = await this.userRepository.findByEmail(email);
@@ -28,15 +33,11 @@ export class AuthUseCase implements IAuthUseCase {
             throw new Error("Email already in use.");
         }
 
-        // 2. Şifreyi Hashle
-        const hashedPassword = await this.hashService.hash(password);
-
         // 3. User Entity oluştur (UserBuilder kullanarak)
         const newUserEntity = new UserBuilder()
             .setFirstname(firstname)
             .setLastname(lastname)
             .setEmail(email)
-            .setPassword(hashedPassword)
             .setTOSAccepted(TOSAccepted)
             .setCreatedAt(new Date())
             .setUpdatedAt(new Date())
@@ -46,35 +47,28 @@ export class AuthUseCase implements IAuthUseCase {
         // 4. Veritabanına kaydet (ID burada oluşup dönecek)
         const createdUser = await this.userRepository.create(newUserEntity);
 
-        // 5. Tokenları üret
-        const accessToken = generateAccessToken(createdUser.id!); // ID'nin string olduğunu varsayıyoruz
-        const refreshToken = generateRefreshToken(createdUser.id!);
-
-        // 6. Refresh Token'ı kullanıcıya kaydet (Update işlemi)
-        // Not: createdUser nesnesi üzerinde refreshToken'ı güncelleyip repoya gönderiyoruz
-        createdUser.refreshToken = refreshToken;
-        await this.userRepository.update(createdUser);
+        // 5. OTP Oluştur ve Kaydet
+        const otpCode = generateOTP();
+        const otpExpiresAt = getOTPExpiration();
+        const otpEntity = new OTP(randomUUID(), otpCode, createdUser.id!, otpExpiresAt, false, new Date(), null);
+        await this.otpRepository.create(otpEntity);
 
         // 7. Doğrulama Maili Gönder
-        // Not: Gerçek senaryoda buraya bir link veya kod koyulur.
-        // Örn: https://api.seninsiten.com/auth/verify?token=${accessToken}
         await this.mailService.sendMail(
             email,
-            "Email Verification",
-            `<h1>Welcome ${firstname}!</h1><p>Please verify your email.</p>`
+            "Hesabınızı Doğrulayın",
+            `<h1>Hoş Geldiniz ${firstname}!</h1><p>Hesabınızı doğrulamak için tek kullanımlık kodunuz: <strong>${otpCode}</strong></p>`
         );
 
         // 8. Sonucu dön
         return {
             user: createdUser,
-            accessToken,
-            refreshToken
         };
     }
 
     // --- LOGIN ---
-    async login(email: string, password: string, rememberMe: boolean): Promise<{
-        user: User, accessToken: string, refreshToken: string
+    async login(email: string): Promise<{
+        user: User
     }> {
         // 1. Kullanıcıyı bul
         const user = await this.userRepository.findByEmail(email);
@@ -82,30 +76,58 @@ export class AuthUseCase implements IAuthUseCase {
             throw new Error("Invalid credentials"); // Güvenlik için "User not found" demeyiz
         }
 
-        // 2. Şifreyi Kontrol Et
-        const isPasswordValid = await this.hashService.compare(password, user.password);
-        if (!isPasswordValid) {
+        // 2. OTP Oluştur, Kaydet ve Gönder
+        const otpCode = generateOTP();
+        const otpExpiresAt = getOTPExpiration();
+        const otpEntity = new OTP(randomUUID(), otpCode, user.id!, otpExpiresAt, false, new Date(), null);
+        await this.otpRepository.create(otpEntity);
+
+        await this.mailService.sendMail(
+            email,
+            "Giriş Kodunuz",
+            `<h1>Giriş Kodunuz</h1><p>Giriş yapmak için tek kullanımlık kodunuz: <strong>${otpCode}</strong></p>`
+        );
+
+        // 5. Sonucu Dön
+        return {
+            user,
+        };
+    }
+
+    // --- VERIFY OTP ---
+    async verifyOTP(email: string, otpCode: string, rememberMe:boolean): Promise<{
+        user: User, accessToken: string, refreshToken: string
+    }> {
+        // 1. Kullanıcıyı bul
+        const user = await this.userRepository.findByEmail(email);
+        if (!user) {
             throw new Error("Invalid credentials");
         }
 
-        // 3. Yeni Tokenları Üret
-        // RememberMe true ise AccessToken süresi uzayabilir (veya logic'e göre refresh token ömrü)
+        // 2. OTP'yi doğrula
+        const otpRecord = await this.otpRepository.findActiveByUserId(user.id!);
+        if (!otpRecord || otpRecord.code !== otpCode) {
+            throw new Error("Invalid or expired OTP");
+        }
+
+        // OTP kullanıldı olarak işaretle
+        otpRecord.isValidated = true;
+        await this.otpRepository.update(otpRecord);
+
+        // 3. Token'ları oluştur
         const accessToken = generateAccessToken(user.id!, rememberMe);
         const refreshToken = generateRefreshToken(user.id!);
 
-        // 4. Refresh Token'ı Güncelle
+        // 4. Refresh token'ı kullanıcıya işle
         user.refreshToken = refreshToken;
         await this.userRepository.update(user);
 
-        // 5. Sonucu Dön
         return {
             user,
             accessToken,
             refreshToken
         };
     }
-
-    // ... (Önceki metodlar: register, login)
 
     // --- REFRESH TOKEN (Token Yenileme) ---
     async refreshToken(token: string): Promise<{ accessToken: string, refreshToken: string }> {
@@ -153,86 +175,6 @@ export class AuthUseCase implements IAuthUseCase {
         if (user) {
             // Veritabanındaki refresh token'ı silerek oturumu sonlandır
             user.refreshToken = "";
-            await this.userRepository.update(user);
-        }
-    }
-
-    // --- FORGOT PASSWORD (Şifremi Unuttum) ---
-    async forgotPassword(email: string): Promise<void> {
-        const user = await this.userRepository.findByEmail(email);
-
-        // Güvenlik Notu: Kullanıcı bulunamazsa hata fırlatma!
-        // Böylece kötü niyetli kişiler email taraması (user enumeration) yapamaz.
-        if (!user) return;
-
-        // 1. Geçici bir erişim tokenı oluştur (Örn: 15 dk geçerli)
-        // Bu token şifre sıfırlama linkinde kullanılacak
-        const resetToken = generateAccessToken(user.id!);
-
-        // 2. Linki oluştur (Frontend URL yapına göre)
-        const resetLink = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
-
-        // 3. Mail gönder
-        await this.mailService.sendMail(
-            email,
-            "Reset Your Password",
-            `<p>Click here to reset your password: <a href="${resetLink}">Reset Password</a></p>`
-        );
-    }
-
-    // --- RESET PASSWORD (Yeni Şifre Belirleme) ---
-    async resetPassword(token: string, newPassword: string): Promise<void> {
-        // 1. Tokenı doğrula
-        let payload: any;
-        try {
-            payload = verifyAccessToken(token); // Forgot password için access token kullanmıştık
-        } catch (e) {
-            throw new Error("Invalid or expired reset token");
-        }
-
-        const user = await this.userRepository.findById(payload.userId);
-        if (!user) throw new Error("User not found");
-
-        user.password = await this.hashService.hash(newPassword);
-
-        // Güvenlik: Şifre değiştiği an tüm oturumları (refresh tokenları) öldürebiliriz
-        user.refreshToken = "";
-
-        await this.userRepository.update(user);
-    }
-
-    // --- CHANGE PASSWORD (Profil içinden şifre değişimi) ---
-    async changePassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
-        const user = await this.userRepository.findById(userId);
-        if (!user) throw new Error("User not found");
-
-        // 1. Eski şifre doğru mu?
-        const isMatch = await this.hashService.compare(oldPassword, user.password);
-        if (!isMatch) {
-            throw new Error("Incorrect old password");
-        }
-
-        // 2. Yeni şifreyi hashle ve kaydet
-        user.password = await this.hashService.hash(newPassword);
-        await this.userRepository.update(user);
-    }
-
-    // --- CONFIRM EMAIL ---
-    async confirmEmail(token: string): Promise<void> {
-        // 1. Token doğrulama (Register işleminde accessToken üretip link olarak atmıştık varsayalım)
-        let payload: any;
-        try {
-            payload = verifyAccessToken(token);
-        } catch (e) {
-            throw new Error("Invalid confirmation token");
-        }
-
-        const user = await this.userRepository.findById(payload.userId);
-        if (!user) throw new Error("User not found");
-
-        // 2. Durumu güncelle
-        if (!user.emailVerified) {
-            user.emailVerified = true;
             await this.userRepository.update(user);
         }
     }

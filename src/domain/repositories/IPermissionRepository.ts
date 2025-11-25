@@ -7,4 +7,3 @@ export interface IPermissionRepository {
   update(permission: Permission): Promise<Permission>;
   delete(id: string): Promise<void>;
 }
-

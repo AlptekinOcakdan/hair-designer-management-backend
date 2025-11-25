@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { OrganisationController } from "../controllers/OrganisationController";
-import { AuthMiddleware } from "../middlewares/AuthMiddleware";
+import { AuthenticationMiddleware } from "../middlewares/AuthenticationMiddleware";
+import { AuthorizationMiddleware } from "../middlewares/AuthorizationMiddleware";
 
 export class OrganisationRoutes {
     public router: Router;
@@ -11,18 +12,18 @@ export class OrganisationRoutes {
 
     private initializeRoutes() {
         // Oluşturma yalnızca yetkili kullanıcılar için (POST)
-        this.router.post("/", AuthMiddleware, this.organisationController.create.bind(this.organisationController));
+        this.router.post("/", AuthenticationMiddleware, AuthorizationMiddleware("create_organisation"), this.organisationController.create.bind(this.organisationController));
         // Güncelleme: artık POST /:id (PUT yasak)
-        this.router.post("/:id", AuthMiddleware, this.organisationController.update.bind(this.organisationController));
+        this.router.post("/:id", AuthenticationMiddleware, AuthorizationMiddleware("update_organisation"), this.organisationController.update.bind(this.organisationController));
         // Tüm organisation'lar herkese açık (GET)
-        this.router.get("/", this.organisationController.getAll.bind(this.organisationController));
+        this.router.get("/", AuthenticationMiddleware, AuthorizationMiddleware("get_all_organisations"), this.organisationController.getAll.bind(this.organisationController));
         // Kendi organisation'larım - yetkili (GET)
-        this.router.get("/me", AuthMiddleware, this.organisationController.getMyOrganisations.bind(this.organisationController));
+        this.router.get("/me", AuthenticationMiddleware, this.organisationController.getMyOrganisations.bind(this.organisationController));
         // Belirli organisation - herkese açık (GET)
-        this.router.get("/:id", this.organisationController.getById.bind(this.organisationController));
+        this.router.get("/:id", AuthenticationMiddleware, AuthorizationMiddleware("get_organisation_by_id"), this.organisationController.getById.bind(this.organisationController));
         // Earnings: belirli organisation için kazanç raporu (yetkili)
-        this.router.get("/:id/earnings", AuthMiddleware, this.organisationController.getEarnings.bind(this.organisationController));
+        this.router.get("/:id/earnings", AuthenticationMiddleware, AuthorizationMiddleware("view_organisation_earnings"), this.organisationController.getEarnings.bind(this.organisationController));
         // Silme: artık POST /:id/delete (DELETE yasak)
-        this.router.post("/:id/delete", AuthMiddleware, this.organisationController.delete.bind(this.organisationController));
+        this.router.post("/:id/delete", AuthenticationMiddleware, AuthorizationMiddleware("delete_organisation"), this.organisationController.delete.bind(this.organisationController));
     }
 }

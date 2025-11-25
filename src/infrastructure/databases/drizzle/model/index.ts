@@ -9,4 +9,5 @@ export * from "./StaffProcedureModel"
 export * from "./UserModel"
 export * from "./UserPermissionModel"
 export * from "./UserStaffAppointmentModel"
+export * from "./OTPModel"
 

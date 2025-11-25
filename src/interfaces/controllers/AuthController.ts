@@ -27,7 +27,6 @@ export class AuthController {
                 firstname,
                 lastname,
                 email,
-                password,
                 TOSAccepted
             } = req.body;
 
@@ -35,15 +34,11 @@ export class AuthController {
                 firstname,
                 lastname,
                 email,
-                password,
                 TOSAccepted
             );
 
-            this.setCookie(res, result.refreshToken);
-
             res.status(201).json({
                 user: result.user,
-                accessToken: result.accessToken
             });
         }
         catch (e) {
@@ -54,9 +49,25 @@ export class AuthController {
 
     async login(req:Request, res:Response, next:NextFunction): Promise<void> {
         try {
-            const { email, password, rememberMe } = req.body;
+            const { email, rememberMe } = req.body;
 
-            const result = await this.authUseCase.login(email, password, rememberMe);
+            const result = await this.authUseCase.login(email);
+
+            res.status(200).json({
+                user: result.user,
+            });
+        }
+        catch (e) {
+            logger.error("Login method:\n",e);
+            next(e);
+        }
+    }
+
+    async verifyToken(req:Request, res:Response, next:NextFunction): Promise<void> {
+        try {
+            const { email, otpCode, rememberMe } = req.body;
+
+            const result = await this.authUseCase.verifyOTP(email, otpCode, rememberMe);
 
             this.setCookie(res, result.refreshToken);
 
@@ -66,7 +77,7 @@ export class AuthController {
             });
         }
         catch (e) {
-            logger.error("Login method:\n",e);
+            logger.error("Verify Token method:\n",e);
             next(e);
         }
     }
@@ -97,63 +108,6 @@ export class AuthController {
         }
         catch (e) {
             logger.error("Refresh Token method:\n",e);
-            next(e);
-        }
-    }
-
-    async forgotPassword(req:Request, res:Response, next:NextFunction): Promise<void> {
-        try {
-            const { email } = req.body;
-
-            await this.authUseCase.forgotPassword(email);
-
-            res.sendStatus(204);
-        }
-        catch (e) {
-            logger.error("Forgot Password method:\n",e);
-            next(e);
-        }
-    }
-
-    async resetPassword(req:Request, res:Response, next:NextFunction): Promise<void> {
-        try {
-            const { token, newPassword } = req.body;
-
-            await this.authUseCase.resetPassword(token, newPassword);
-
-            res.sendStatus(204);
-        }
-        catch (e) {
-            logger.error("Reset Password method:\n",e);
-            next(e);
-        }
-    }
-
-    async changePassword(req:ExpressRequestInterface, res:Response, next:NextFunction): Promise<void> {
-        try {
-            const userId = req.user!.id;
-            const { currentPassword, newPassword } = req.body;
-
-            await this.authUseCase.changePassword(userId, currentPassword, newPassword);
-
-            res.sendStatus(204);
-        }
-        catch (e) {
-            logger.error("Change Password method:\n",e);
-            next(e);
-        }
-    }
-
-    async verifyEmail(req:Request, res:Response, next:NextFunction): Promise<void> {
-        try {
-            const { token } = req.body;
-
-            await this.authUseCase.confirmEmail(token);
-
-            res.sendStatus(204);
-        }
-        catch (e) {
-            logger.error("Verify Email method:\n",e);
             next(e);
         }
     }

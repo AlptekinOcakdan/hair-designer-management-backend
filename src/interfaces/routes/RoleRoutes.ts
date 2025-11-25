@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { RoleController } from "../controllers/RoleController";
-import { AuthMiddleware } from "../middlewares/AuthMiddleware";
+import { AuthenticationMiddleware } from "../middlewares/AuthenticationMiddleware";
+import { AuthorizationMiddleware } from "../middlewares/AuthorizationMiddleware";
 
 export class RoleRoutes {
     public router: Router;
@@ -11,15 +12,14 @@ export class RoleRoutes {
 
     private initializeRoutes() {
         // Oluşturma yalnızca yetkili kullanıcılar için (POST)
-        this.router.post("/", AuthMiddleware, this.roleController.create.bind(this.roleController));
+        this.router.post("/", AuthenticationMiddleware, AuthorizationMiddleware("create_role"), this.roleController.create.bind(this.roleController));
         // Güncelleme: artık POST /:id (PUT yasak)
-        this.router.post("/:id", AuthMiddleware, this.roleController.update.bind(this.roleController));
+        this.router.post("/:id", AuthenticationMiddleware, AuthorizationMiddleware("update_role"), this.roleController.update.bind(this.roleController));
         // Tüm roller herkese açık (GET)
-        this.router.get("/", this.roleController.getAll.bind(this.roleController));
+        this.router.get("/", AuthenticationMiddleware, this.roleController.getAll.bind(this.roleController));
         // Belirli rol - herkese açık (GET)
-        this.router.get("/:id", this.roleController.getById.bind(this.roleController));
+        this.router.get("/:id", AuthenticationMiddleware, this.roleController.getById.bind(this.roleController));
         // Silme: artık POST /:id/delete (DELETE yasak)
-        this.router.post("/:id/delete", AuthMiddleware, this.roleController.delete.bind(this.roleController));
+        this.router.post("/:id/delete", AuthenticationMiddleware, AuthorizationMiddleware("delete_role"), this.roleController.delete.bind(this.roleController));
     }
 }
-

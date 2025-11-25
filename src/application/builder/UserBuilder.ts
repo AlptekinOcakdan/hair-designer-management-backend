@@ -5,7 +5,6 @@ export class UserBuilder {
     private firstname: string = '';
     private lastname: string = '';
     private email: string = '';
-    private password: string = '';
     private phoneNumber: string = '';
     private emailVerified: boolean = false;
     private phoneVerified: boolean = false;
@@ -31,11 +30,6 @@ export class UserBuilder {
 
     public setEmail(email: string): this {
         this.email = email;
-        return this;
-    }
-
-    public setPassword(password: string): this {
-        this.password = password;
         return this;
     }
 
@@ -80,7 +74,6 @@ export class UserBuilder {
             this.firstname,
             this.lastname,
             this.email,
-            this.password,
             this.phoneNumber,
             this.emailVerified,
             this.phoneVerified,

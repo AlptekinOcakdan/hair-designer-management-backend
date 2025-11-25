@@ -7,7 +7,8 @@ import logger from './interfaces/logger/Logger';
 import {db} from "./config/DrizzleConfig";
 import {
     organisationsTable, usersTable, salonsTable, proceduresTable, permissionsTable, rolesTable,
-    rolePermissionsTable, userPermissionsTable, salonStaffsTable, userStaffAppointmentsTable, staffProceduresTable
+    rolePermissionsTable, userPermissionsTable, salonStaffsTable, userStaffAppointmentsTable, staffProceduresTable,
+    otpsTable
 } from "./infrastructure/databases/drizzle/model";
 import {AuthUseCase} from "./application/use-cases/AuthUseCase";
 import {BcryptService} from "./domain/services/concrete/BcryptService";
@@ -41,6 +42,7 @@ import {SalonStaffRepositoryFactory} from "./application/factories/SalonStaffRep
 import {UserUseCase} from "./application/use-cases/UserUseCase";
 import {UserStaffAppointmentRepositoryFactory} from "./application/factories/UserStaffAppointmentRepositoryFactory";
 import {StaffProcedureRepositoryFactory} from "./application/factories/StaffProcedureRepositoryFactory";
+import {OTPRepositoryFactory} from "./application/factories/OTPRepositoryFactory";
 
 dotenv.config();
 
@@ -63,10 +65,11 @@ const startApplication = async () => {
     const salonStaffRepository = SalonStaffRepositoryFactory.create(db, salonStaffsTable);
     const userStaffAppointmentRepository = UserStaffAppointmentRepositoryFactory.create(db, userStaffAppointmentsTable);
     const staffProcedureRepository = StaffProcedureRepositoryFactory.create(db, staffProceduresTable);
+    const otpRepository = OTPRepositoryFactory.create(db, otpsTable)
 
     // USE CASES
     const userUseCase = new UserUseCase(userRepository, salonStaffRepository, roleRepository, salonRepository, userStaffAppointmentRepository, mailService, staffProcedureRepository, procedureRepository);
-    const authUseCase = new AuthUseCase(userRepository, hashService, mailService);
+    const authUseCase = new AuthUseCase(userRepository, hashService, mailService, otpRepository);
     const organisationUseCase = new OrganisationUseCase(organisationRepository, salonRepository, salonStaffRepository, userStaffAppointmentRepository, staffProcedureRepository);
     const salonUseCase = new SalonUseCase(salonRepository);
     const procedureUseCase = new ProcedureUseCase(procedureRepository);

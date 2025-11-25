@@ -83,4 +83,3 @@ export class DrizzlePermissionRepository implements IPermissionRepository {
             .where(eq(this.table.id, id));
     }
 }
-

@@ -61,7 +61,6 @@ export class UserUseCase implements IUserUseCase {
             .setFirstname(userData.firstname)
             .setLastname(userData.lastname)
             .setEmail(userData.email)
-            .setPassword("")
             .setCreatedAt(new Date())
             .setUpdatedAt(null)
             .build()

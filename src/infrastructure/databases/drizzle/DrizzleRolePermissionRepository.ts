@@ -66,6 +66,14 @@ export class DrizzleRolePermissionRepository implements IRolePermissionRepositor
         return rows.map(r => this.toDomain(r));
     }
 
+    async findByRoleId(roleId: string): Promise<RolePermission[]> {
+        const results = await this.db
+            .select()
+            .from(this.table)
+            .where(eq(this.table.roleId, roleId));
+        return results.map(doc => this.toDomain(doc));
+    }
+
     async update(rolePermission: RolePermission): Promise<RolePermission> {
         // Update işlemi için Composite Key'e ihtiyacımız var.
         // Bu tabloda genelde sadece 'updatedAt' gibi alanlar güncellenir.

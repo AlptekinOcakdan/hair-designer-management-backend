@@ -8,7 +8,7 @@ import {db} from "./config/DrizzleConfig";
 import {
     organisationsTable, usersTable, salonsTable, proceduresTable, permissionsTable, rolesTable,
     rolePermissionsTable, userPermissionsTable, salonStaffsTable, userStaffAppointmentsTable, staffProceduresTable,
-    otpsTable
+    otpsTable, userRolesTable
 } from "./infrastructure/databases/drizzle/model";
 import {AuthUseCase} from "./application/use-cases/AuthUseCase";
 import {BcryptService} from "./domain/services/concrete/BcryptService";
@@ -43,6 +43,7 @@ import {UserUseCase} from "./application/use-cases/UserUseCase";
 import {UserStaffAppointmentRepositoryFactory} from "./application/factories/UserStaffAppointmentRepositoryFactory";
 import {StaffProcedureRepositoryFactory} from "./application/factories/StaffProcedureRepositoryFactory";
 import {OTPRepositoryFactory} from "./application/factories/OTPRepositoryFactory";
+import {UserRoleRepositoryFactory} from "./application/factories/UserRoleRepositoryFactory";
 
 dotenv.config();
 
@@ -65,15 +66,16 @@ const startApplication = async () => {
     const salonStaffRepository = SalonStaffRepositoryFactory.create(db, salonStaffsTable);
     const userStaffAppointmentRepository = UserStaffAppointmentRepositoryFactory.create(db, userStaffAppointmentsTable);
     const staffProcedureRepository = StaffProcedureRepositoryFactory.create(db, staffProceduresTable);
-    const otpRepository = OTPRepositoryFactory.create(db, otpsTable)
+    const otpRepository = OTPRepositoryFactory.create(db, otpsTable);
+    const userRoleRepository = UserRoleRepositoryFactory.create(db, userRolesTable);
 
     // USE CASES
-    const userUseCase = new UserUseCase(userRepository, salonStaffRepository, roleRepository, salonRepository, userStaffAppointmentRepository, mailService, staffProcedureRepository, procedureRepository);
+    const userUseCase = new UserUseCase(userRepository, salonStaffRepository, roleRepository, salonRepository, userStaffAppointmentRepository, mailService, staffProcedureRepository, procedureRepository, userRoleRepository, userPermissionRepository, rolePermissionRepository);
     const authUseCase = new AuthUseCase(userRepository, hashService, mailService, otpRepository);
     const organisationUseCase = new OrganisationUseCase(organisationRepository, salonRepository, salonStaffRepository, userStaffAppointmentRepository, staffProcedureRepository);
     const salonUseCase = new SalonUseCase(salonRepository);
     const procedureUseCase = new ProcedureUseCase(procedureRepository);
-    const permissionUseCase = new PermissionUseCase(permissionRepository, rolePermissionRepository, userPermissionRepository, salonStaffRepository);
+    const permissionUseCase = new PermissionUseCase(permissionRepository);
     const roleUseCase = new RoleUseCase(roleRepository);
 
     // CONTROLLERS

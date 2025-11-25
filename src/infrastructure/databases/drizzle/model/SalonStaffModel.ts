@@ -1,13 +1,11 @@
 import {pgTable, uuid, timestamp, primaryKey, text, boolean} from "drizzle-orm/pg-core";
 import {salonsTable} from "./SalonModel";
 import {usersTable} from "./UserModel";
-import {rolesTable} from "./RolesModel";
 import {InferInsertModel, InferSelectModel} from "drizzle-orm";
 
 export const salonStaffsTable = pgTable('salon_staffs', {
     salonId: uuid('salon_id').references(() => salonsTable.id).notNull(),
     userId: uuid('user_id').references(() => usersTable.id).notNull(),
-    roleId: uuid('role_id').references(() => rolesTable.id).notNull(),
     avalaibleForAppointments: boolean('avalaible_for_appointments').default(false).notNull(),
     availableWeekDays: text('available_week_days').array().notNull().default([]),
     availableDays: text('available_days').array().notNull().default([]),

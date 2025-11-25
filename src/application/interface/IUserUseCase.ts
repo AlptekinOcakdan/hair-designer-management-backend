@@ -2,6 +2,7 @@ import { User } from "../../domain/entities/User";
 import { Procedure } from "../../domain/entities/Procedure";
 
 export interface IUserUseCase {
+    assignRoleToUser(userId: string, roleId: string, organisationId: string| null, salonId: string | null): Promise<void>;
     // Yeni kullanıcı oluşturup aynı anda verilen salon ve role ile SalonStaff kaydı oluşturur.
     // staffOptions opsiyoneldir (availableForAppointments, availableWeekDays, availableHours, nonAvailableRange)
     createAndAssignToSalon(

@@ -120,6 +120,7 @@ export class AuthUseCase implements IAuthUseCase {
 
         // 4. Refresh token'ı kullanıcıya işle
         user.refreshToken = refreshToken;
+        user.emailVerified = true; // Doğrulama başarılı ise email'i doğrulanmış yap
         await this.userRepository.update(user);
 
         return {

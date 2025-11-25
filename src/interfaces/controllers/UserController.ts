@@ -11,6 +11,47 @@ export class UserController {
         void this.server;
     }
 
+    async assignRoleToUser(req: ExpressRequestInterface, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { userId, roleId, organisationId, salonId } = req.body;
+
+            // Basit doğrulama
+            if (!userId || typeof userId !== 'string') {
+                res.status(400).json({ error: 'userId is required and must be a string' });
+                return;
+            }
+            if (!roleId || typeof roleId !== 'string') {
+                res.status(400).json({ error: 'roleId is required and must be a string' });
+                return;
+            }
+
+            await this.userUseCase.assignRoleToUser(userId, roleId, organisationId ?? null, salonId ?? null);
+            res.sendStatus(204);
+        } catch (err: any) {
+            logger.error("assignRoleToUser error:", err);
+
+            const msg = String(err?.message ?? err);
+            // Domain level not found errors
+            if (msg.includes('User not found')) {
+                res.status(404).json({ error: 'User not found' });
+                return;
+            }
+            if (msg.includes('Role not found')) {
+                res.status(404).json({ error: 'Role not found' });
+                return;
+            }
+
+            // DB constraint/insert hatalarını ayrıştır
+            if (msg.includes('no unique') || msg.includes('constraint') || msg.includes('duplicate') || msg.includes('violat')) {
+                res.status(409).json({ error: 'Database constraint error', detail: msg });
+                return;
+            }
+
+            // Default
+            next(err);
+        }
+    }
+
     async createAndAssignToSalon(req: ExpressRequestInterface, res: Response, next: NextFunction): Promise<void> {
         try {
             const { userData, salonId, roleId, staffOptions } = req.body;

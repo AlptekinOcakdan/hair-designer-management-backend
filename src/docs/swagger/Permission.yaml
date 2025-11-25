@@ -172,30 +172,6 @@ paths:
         '404':
           description: Permission not found
 
-  /permissions/relate/to-role:
-    post:
-      tags: [Permission]
-      summary: Relate a permission to a role (creates role-permission mapping and assigns permission to existing staff of the role)
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RelateToRoleRequest'
-      responses:
-        '200':
-          description: Relation created and user permissions updated
-        '400':
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Unauthorized
-
   /permissions/{id}/delete:
     post:
       tags: [Permission]
@@ -223,4 +199,3 @@ paths:
 tags:
   - name: Permission
     description: Permission creation, retrieval, update, deletion and relating to roles
-

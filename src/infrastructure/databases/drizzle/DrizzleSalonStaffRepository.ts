@@ -20,7 +20,6 @@ export class DrizzleSalonStaffRepository implements ISalonStaffRepository {
             // 'id' alanı kaldırıldı, composite key kullanılıyor.
             salonId: s.salonId,
             userId: s.userId,
-            roleId: s.roleId,
             avalaibleForAppointments: s.avalaibleForAppointments,
             availableWeekDays: s.availableWeekDays,
             availableHours: s.availableHours,
@@ -34,7 +33,6 @@ export class DrizzleSalonStaffRepository implements ISalonStaffRepository {
         return new SalonStaff(
             doc.salonId,
             doc.userId,
-            doc.roleId,
             doc.avalaibleForAppointments,
             doc.availableWeekDays,
             doc.availableHours,

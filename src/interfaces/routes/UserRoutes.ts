@@ -17,6 +17,8 @@ export class UserRoutes {
     this.router.post('/create-assign', AuthenticationMiddleware, AuthorizationMiddleware('create_and_assign_user_to_salon'), this.userController.createAndAssignToSalon.bind(this.userController));
     // Var olan kullanıcıyı salona ata
     this.router.post('/assign', AuthenticationMiddleware, AuthorizationMiddleware('assign_user_to_salon'), this.userController.assignUserToSalon.bind(this.userController));
+    // Kullanıcıya rol ata
+    this.router.post('/assign-role', AuthenticationMiddleware, AuthorizationMiddleware('assign_role_to_user'), this.userController.assignRoleToUser.bind(this.userController));
     // Çalışma programı ayarla (authenticated user's id used in controller)
     this.router.post('/:salonId/schedule', AuthenticationMiddleware, AuthorizationMiddleware('set_user_working_schedule'), this.userController.setWorkingSchedule.bind(this.userController));
     // availableForAppointments değiştir

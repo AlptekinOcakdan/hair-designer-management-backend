@@ -15,6 +15,11 @@ import {IStaffProcedureRepository} from "../../domain/repositories/IStaffProcedu
 import {StaffProcedureBuilder} from "../builder/StaffProcedureBuilder";
 import {IProcedureRepository} from "../../domain/repositories/IProcedureRepository";
 import {Procedure} from "../../domain/entities/Procedure";
+import {IUserRoleRepository} from "../../domain/repositories/IUserRoleRepository";
+import {UserRoleBuilder} from "../builder/UserRoleBuilder";
+import {IUserPermissionRepository} from "../../domain/repositories/IUserPermissionRepository";
+import {IRolePermissionRepository} from "../../domain/repositories/IRolePermissionRepository";
+import {UserPermissionBuilder} from "../builder/UserPermissionBuilder";
 
 export class UserUseCase implements IUserUseCase {
     constructor(
@@ -25,8 +30,51 @@ export class UserUseCase implements IUserUseCase {
         private userStaffAppointmentRepository: IUserStaffAppointmentRepository,
         private mailService: IMailService,
         private staffProcedureRepository: IStaffProcedureRepository,
-        private procedureRepository: IProcedureRepository
+        private procedureRepository: IProcedureRepository,
+        private userRoleRepository: IUserRoleRepository,
+        private userPermissionRepository: IUserPermissionRepository,
+        private rolePermissionRepository: IRolePermissionRepository
     ) {
+    }
+
+    async assignRoleToUser(userId: string, roleId: string, organisationId: string| null, salonId: string | null): Promise<void> {
+        const user = await this.userRepository.findById(userId);
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        const role = await this.roleRepository.findById(roleId);
+        if (!role) {
+            throw new Error("Role not found");
+        }
+
+        const userRole = new UserRoleBuilder()
+            .setUserId(userId)
+            .setRoleId(roleId)
+            .setOrganisationId(organisationId)
+            .setSalonId(salonId)
+            .setCreatedAt(new Date())
+            .setUpdatedAt(null)
+            .build();
+        await this.userRoleRepository.create(userRole);
+
+        // Role ait yetkileri bul
+        const rolePermissions = await this.rolePermissionRepository.findByRoleId(roleId);
+
+        // Bu yetkileri kullanıcıya ata
+        for (const rp of rolePermissions) {
+            // Kullanıcının bu yetkiye zaten sahip olup olmadığını kontrol et
+            const existingPermission = await this.userPermissionRepository.findById(userId, rp.permissionId);
+            if (!existingPermission) {
+                const userPermission = new UserPermissionBuilder()
+                    .setUserId(userId)
+                    .setPermissionId(rp.permissionId)
+                    .setCreatedAt(new Date())
+                    .setUpdatedAt(null)
+                    .build();
+                await this.userPermissionRepository.create(userPermission);
+            }
+        }
     }
 
     // Yeni kullanıcı oluşturup salon-staff ilişkisi kurar
@@ -71,7 +119,6 @@ export class UserUseCase implements IUserUseCase {
         const salonStaff = new SalonStaffBuilder()
             .setSalonId(salonId)
             .setUserId(createdUser.id) // repository tarafından atanan id beklentisi
-            .setRoleId(roleId)
             .setAvalaibleForAppointments(!!staffOptions?.availableForAppointments)
             .setAvailableWeekDays(staffOptions?.availableWeekDays ?? [])
             .setAvailableHours(staffOptions?.availableHours ?? [])
@@ -117,7 +164,6 @@ export class UserUseCase implements IUserUseCase {
         const salonStaff = new SalonStaffBuilder()
             .setSalonId(salonId)
             .setUserId(userId)
-            .setRoleId(roleId)
             .setAvalaibleForAppointments(!!staffOptions?.availableForAppointments)
             .setAvailableWeekDays(staffOptions?.availableWeekDays ?? [])
             .setAvailableHours(staffOptions?.availableHours ?? [])
@@ -142,7 +188,6 @@ export class UserUseCase implements IUserUseCase {
         const updatedStaff = new SalonStaffBuilder()
             .setSalonId(salonId)
             .setUserId(userId)
-            .setRoleId(staff.roleId)
             .setAvalaibleForAppointments(staff.avalaibleForAppointments)
             .setAvailableWeekDays(availableWeekDays)
             .setAvailableHours(availableHours)
@@ -166,7 +211,6 @@ export class UserUseCase implements IUserUseCase {
         const updatedStaff = new SalonStaffBuilder()
             .setSalonId(salonId)
             .setUserId(userId)
-            .setRoleId(staff.roleId)
             .setAvalaibleForAppointments(available)
             .setAvailableWeekDays(staff.availableWeekDays ?? [])
             .setAvailableHours(staff.availableHours ?? [])
@@ -206,7 +250,6 @@ export class UserUseCase implements IUserUseCase {
         const updatedStaff = new SalonStaffBuilder()
             .setSalonId(salonId)
             .setUserId(userId)
-            .setRoleId(staff.roleId)
             .setAvalaibleForAppointments(false)
             .setAvailableWeekDays(staff.availableWeekDays ?? [])
             .setAvailableHours(staff.availableHours ?? [])

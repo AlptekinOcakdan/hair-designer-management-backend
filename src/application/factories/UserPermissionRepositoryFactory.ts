@@ -1,5 +1,5 @@
 import {NeonHttpDatabase} from "drizzle-orm/neon-http";
-import * as schema from "../../infrastructure/databases/drizzle/model/UserPermissionModel";
+import * as schema from "../../infrastructure/databases/drizzle/model";
 import {userPermissionsTable} from "../../infrastructure/databases/drizzle/model";
 import {IUserPermissionRepository} from "../../domain/repositories/IUserPermissionRepository";
 import {DrizzleUserPermissionRepository} from "../../infrastructure/databases/drizzle/DrizzleUserPermissionRepository";

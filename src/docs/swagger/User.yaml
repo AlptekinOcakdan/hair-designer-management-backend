@@ -102,6 +102,25 @@ components:
         staffOptions:
           $ref: '#/components/schemas/StaffOptions'
 
+    AssignRoleRequest:
+      type: object
+      required: [userId, roleId]
+      properties:
+        userId:
+          type: string
+          description: The ID of the user to whom the role will be assigned.
+        roleId:
+          type: string
+          description: The ID of the role to be assigned.
+        organisationId:
+          type: string
+          description: Optional. The ID of the organisation for context.
+          nullable: true
+        salonId:
+          type: string
+          description: Optional. The ID of the salon for context.
+          nullable: true
+
     SetWorkingScheduleRequest:
       type: object
       required: [availableWeekDays, availableHours]
@@ -263,6 +282,31 @@ paths:
           description: Unauthorized
         '404':
           description: User, salon or role not found
+
+  /users/assign-role:
+    post:
+      tags: [User]
+      summary: Assign a role to a user
+      description: Assigns a role to a user within an optional organisation or salon context. This also assigns all permissions associated with the role to the user.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignRoleRequest'
+      responses:
+        '204':
+          description: Role assigned successfully (no content).
+        '400':
+          description: Validation error.
+        '401':
+          description: Unauthorized.
+        '403':
+          description: Forbidden.
+        '404':
+          description: User or role not found.
 
   /users/{salonId}/schedule:
     post:
@@ -471,4 +515,3 @@ paths:
 tags:
   - name: User
     description: User, staff and appointment related endpoints
-

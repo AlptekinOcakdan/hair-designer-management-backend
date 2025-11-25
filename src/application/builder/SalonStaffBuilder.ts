@@ -3,7 +3,6 @@ import { SalonStaff } from '../../domain/entities/SalonStaff';
 export class SalonStaffBuilder {
     private salonId: string = '';
     private userId: string = '';
-    private roleId: string = '';
     private avalaibleForAppointments: boolean = false;
     private availableWeekDays: string[] = [];
     private availableHours: string[] = [];
@@ -18,11 +17,6 @@ export class SalonStaffBuilder {
 
     public setUserId(userId: string): this {
         this.userId = userId;
-        return this;
-    }
-
-    public setRoleId(roleId: string): this {
-        this.roleId = roleId;
         return this;
     }
 
@@ -60,7 +54,6 @@ export class SalonStaffBuilder {
         return new SalonStaff(
             this.salonId,
             this.userId,
-            this.roleId,
             this.avalaibleForAppointments,
             this.availableWeekDays,
             this.availableHours,

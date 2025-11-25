@@ -6,5 +6,4 @@ export interface IPermissionUseCase {
   getAll(): Promise<Permission[]>;
   update(permission: Permission): Promise<Permission>;
   delete(id: string): Promise<void>;
-  relateToRole(roleId: string, permissionId: string): Promise<void>;
 }

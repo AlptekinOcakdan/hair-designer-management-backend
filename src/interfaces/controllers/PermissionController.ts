@@ -61,16 +61,6 @@ export class PermissionController {
         }
     }
 
-    async relateToRole(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const { roleId, permissionId } = req.body;
-            const result = await this.permissionUseCase.relateToRole(roleId, permissionId);
-            res.status(200).json(result);
-        } catch (error) {
-            next(error);
-        }
-    }
-
     // Delete
     async delete(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {

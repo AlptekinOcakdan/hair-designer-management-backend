@@ -20,8 +20,6 @@ export class PermissionRoutes {
     this.router.get('/:id', AuthenticationMiddleware, AuthorizationMiddleware('get_permission_by_id'), this.permissionController.getById.bind(this.permissionController));
     // Güncelleme (POST /:id) - yetkili
     this.router.post('/:id', AuthenticationMiddleware, AuthorizationMiddleware('update_permission'), this.permissionController.update.bind(this.permissionController));
-    // Role ilişkilendirme (POST /relate/to-role) - yetkili
-    this.router.post('/relate/to-role', AuthenticationMiddleware, AuthorizationMiddleware('relate_permission_to_role'), this.permissionController.relateToRole.bind(this.permissionController));
     // Silme (POST /:id/delete) - yetkili
     this.router.post('/:id/delete', AuthenticationMiddleware, AuthorizationMiddleware('delete_permission'), this.permissionController.delete.bind(this.permissionController));
   }

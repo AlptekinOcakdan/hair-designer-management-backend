@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { BadRequestError } from '../errors/BadRequestError';
 import validator from 'validator';
-import { CreateUserDto } from '../dtos/CreateUserDto';
-import { LoginUserDto } from '../dtos/LoginUserDto';
+import { CreateUserDto } from '../../domain/dtos/CreateUserDto';
+import { LoginUserDto } from '../../domain/dtos/LoginUserDto';
 
 export const validateUserRegister = (req: Request, res: Response, next: NextFunction) => {
   const { username, email, password } = req.body;

@@ -8,7 +8,9 @@ export class AuthController {
     constructor(
         private authUseCase:IAuthUseCase,
         private server: Server
-    ) {}
+    ) {
+        void this.server;
+    }
 
     private setCookie(res: Response, token: string) {
         res.cookie('refreshToken', token, {

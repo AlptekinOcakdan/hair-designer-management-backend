@@ -1,0 +1,262 @@
+openapi: 3.0.0
+info:
+  title: Organisation API
+  version: 1.0.0
+  description: Organisation management endpoints (create, update, list, get, get my organisations, delete)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Organisation:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    CreateOrganisationRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+
+    UpdateOrganisationRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        code:
+          type: integer
+
+    EarningsItem:
+      type: object
+      properties:
+        salonId:
+          type: string
+        salonName:
+          type: string
+        total:
+          type: string
+          description: Total earnings formatted as string with two decimals
+
+paths:
+  /organisations:
+    post:
+      tags: [Organisation]
+      summary: Create a new organisation
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrganisationRequest'
+      responses:
+        '201':
+          description: Organisation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organisation'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+
+    get:
+      tags: [Organisation]
+      summary: Get all organisations (public)
+      responses:
+        '200':
+          description: List of organisations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organisation'
+        '500':
+          description: Server error
+
+  /organisations/me:
+    get:
+      tags: [Organisation]
+      summary: Get organisations of authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of user's organisations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organisation'
+        '401':
+          description: Unauthorized
+
+  /organisations/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+
+    get:
+      tags: [Organisation]
+      summary: Get organisation by id (public)
+      responses:
+        '200':
+          description: Organisation found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organisation'
+        '404':
+          description: Organisation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags: [Organisation]
+      summary: Update an organisation (uses POST /:id)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrganisationRequest'
+      responses:
+        '200':
+          description: Updated organisation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organisation'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Organisation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /organisations/{id}/earnings:
+    get:
+      tags: [Organisation]
+      summary: Get earnings report for an organisation (filter by month/year and optional salonIds)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: month
+          description: Month filter in YYYY-MM format (e.g. 2024-05)
+          schema:
+            type: string
+        - in: query
+          name: year
+          description: Year filter in YYYY format (e.g. 2024)
+          schema:
+            type: string
+        - in: query
+          name: salonIds
+          description: Optional salon ids to restrict the report; can be provided as comma-separated string or repeated param
+          schema:
+            type: array
+            items:
+              type: string
+            style: form
+            explode: false
+      responses:
+        '200':
+          description: Earnings summary per salon
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EarningsItem'
+        '400':
+          description: Invalid query parameters (e.g. bad month/year format)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+
+  /organisations/{id}/delete:
+    post:
+      tags: [Organisation]
+      summary: Delete an organisation (uses POST /:id/delete)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Organisation deleted (no content)
+        '401':
+          description: Unauthorized
+        '404':
+          description: Organisation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+tags:
+  - name: Organisation
+    description: Organisation management endpoints

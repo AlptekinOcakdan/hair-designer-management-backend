@@ -1,0 +1,474 @@
+openapi: 3.0.0
+info:
+  title: User API
+  version: 1.0.0
+  description: Endpoints for user management, staff scheduling, appointments and staff procedures
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        firstname:
+          type: string
+        lastname:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        phoneNumber:
+          type: string
+        emailVerified:
+          type: boolean
+        phoneVerified:
+          type: boolean
+        refreshToken:
+          type: string
+        TOSAccepted:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    StaffOptions:
+      type: object
+      properties:
+        availableForAppointments:
+          type: boolean
+        availableWeekDays:
+          type: array
+          items:
+            type: string
+        availableHours:
+          type: array
+          items:
+            type: string
+        nonAvailableRange:
+          type: array
+          items:
+            type: string
+
+    CreateAssignRequest:
+      type: object
+      required: [userData, salonId, roleId]
+      properties:
+        userData:
+          type: object
+          properties:
+            firstname:
+              type: string
+            lastname:
+              type: string
+            username:
+              type: string
+            email:
+              type: string
+              format: email
+            password:
+              type: string
+            phoneNumber:
+              type: string
+        salonId:
+          type: string
+        roleId:
+          type: string
+        staffOptions:
+          $ref: '#/components/schemas/StaffOptions'
+
+    AssignRequest:
+      type: object
+      required: [userId, salonId, roleId]
+      properties:
+        userId:
+          type: string
+        salonId:
+          type: string
+        roleId:
+          type: string
+        staffOptions:
+          $ref: '#/components/schemas/StaffOptions'
+
+    SetWorkingScheduleRequest:
+      type: object
+      required: [availableWeekDays, availableHours]
+      properties:
+        availableWeekDays:
+          type: array
+          items:
+            type: string
+        availableHours:
+          type: array
+          items:
+            type: string
+
+    SetAvailabilityRequest:
+      type: object
+      required: [available]
+      properties:
+        available:
+          type: boolean
+
+    NonAvailableRangeRequest:
+      type: object
+      required: [start, end, reason]
+      properties:
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        reason:
+          type: string
+
+    StaffPerformedProcedureRequest:
+      type: object
+      required: [staffId, procedureId, durationMinutes, price]
+      properties:
+        staffId:
+          type: string
+        procedureId:
+          type: string
+        durationMinutes:
+          type: integer
+          format: int32
+        price:
+          type: string
+
+    Procedure:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        durationMinutes:
+          type: integer
+        price:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    StaffProceduresResponseItem:
+      type: object
+      properties:
+        staffId:
+          type: string
+        firstname:
+          type: string
+        lastname:
+          type: string
+        procedures:
+          type: array
+          items:
+            $ref: '#/components/schemas/Procedure'
+
+    BookAppointmentRequest:
+      type: object
+      required: [staffId, procedureIds, appointmentDate]
+      properties:
+        clientId:
+          type: string
+          description: Optional; if omitted, authenticated user's id is used
+        staffId:
+          type: string
+        procedureIds:
+          type: array
+          items:
+            type: string
+        appointmentDate:
+          type: string
+          format: date-time
+
+    CompleteAppointmentRequest:
+      type: object
+      required: [staffId]
+      properties:
+        staffId:
+          type: string
+
+    RequestCancelRequest:
+      type: object
+      required: [userId, reason]
+      properties:
+        userId:
+          type: string
+        reason:
+          type: string
+
+paths:
+  /users/create-assign:
+    post:
+      tags: [User]
+      summary: Create a new user and assign to a salon as staff
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAssignRequest'
+      responses:
+        '201':
+          description: Created user object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Validation or missing data
+        '401':
+          description: Unauthorized
+
+  /users/assign:
+    post:
+      tags: [User]
+      summary: Assign an existing user to a salon as staff
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignRequest'
+      responses:
+        '204':
+          description: Assigned successfully (no content)
+        '400':
+          description: Validation error
+        '401':
+          description: Unauthorized
+        '404':
+          description: User, salon or role not found
+
+  /users/{salonId}/schedule:
+    post:
+      tags: [User]
+      summary: Set authenticated staff user's working schedule for a salon
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: salonId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetWorkingScheduleRequest'
+      responses:
+        '204':
+          description: Schedule updated
+        '401':
+          description: Unauthorized
+        '404':
+          description: SalonStaff relation not found
+
+  /users/{salonId}/availability:
+    post:
+      tags: [User]
+      summary: Set authenticated staff user's availability for appointments in a salon
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: salonId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetAvailabilityRequest'
+      responses:
+        '204':
+          description: Availability updated
+        '401':
+          description: Unauthorized
+        '404':
+          description: SalonStaff relation not found
+
+  /users/{salonId}/non-available:
+    post:
+      tags: [User]
+      summary: Add a non-available range for authenticated staff user (cancels appointments in range)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: salonId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NonAvailableRangeRequest'
+      responses:
+        '204':
+          description: Non-available range set and affected appointments canceled
+        '400':
+          description: Invalid date range
+        '401':
+          description: Unauthorized
+        '404':
+          description: SalonStaff relation not found
+
+  /users/staff/procedure:
+    post:
+      tags: [User]
+      summary: Add a performed procedure record for a staff
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StaffPerformedProcedureRequest'
+      responses:
+        '201':
+          description: Procedure recorded
+        '400':
+          description: Validation error
+        '401':
+          description: Unauthorized
+        '404':
+          description: Staff or procedure not found
+
+  /users/salon/{salonId}/staff-procedures:
+    get:
+      tags: [User]
+      summary: Get staff members in a salon and their performed procedures
+      parameters:
+        - in: path
+          name: salonId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of staff with their procedures
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StaffProceduresResponseItem'
+        '404':
+          description: Salon not found or no staff
+
+  /users/book:
+    post:
+      tags: [User]
+      summary: Book an appointment with a staff
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookAppointmentRequest'
+      responses:
+        '201':
+          description: Appointment created
+        '400':
+          description: Validation error or invalid date
+        '401':
+          description: Unauthorized
+        '404':
+          description: Client or staff not found
+
+  /users/appointment/{appointmentId}/complete:
+    post:
+      tags: [User]
+      summary: Mark an appointment as completed (staff only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: appointmentId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteAppointmentRequest'
+      responses:
+        '200':
+          description: Appointment marked as completed
+        '401':
+          description: Unauthorized
+        '403':
+          description: Not authorized to complete this appointment
+        '404':
+          description: Appointment not found
+
+  /users/appointment/{appointmentId}/request-cancel:
+    post:
+      tags: [User]
+      summary: Request appointment cancellation by user (sends email to staff)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: appointmentId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestCancelRequest'
+      responses:
+        '200':
+          description: Cancellation request sent to staff
+        '400':
+          description: Validation error
+        '401':
+          description: Unauthorized
+        '403':
+          description: Not authorized to request cancellation for this appointment
+        '404':
+          description: Appointment or staff email not found
+
+tags:
+  - name: User
+    description: User, staff and appointment related endpoints
+

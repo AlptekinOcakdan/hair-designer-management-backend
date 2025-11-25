@@ -1,0 +1,176 @@
+openapi: 3.0.0
+info:
+  title: Procedure API
+  version: 1.0.0
+  description: Procedure management endpoints (create, update, list, get by id, delete)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Procedure:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        durationMinutes:
+          type: integer
+          nullable: true
+        price:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    CreateProcedureRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        durationMinutes:
+          type: integer
+        price:
+          type: string
+
+    UpdateProcedureRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        durationMinutes:
+          type: integer
+        price:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+paths:
+  /procedures:
+    post:
+      tags: [Procedure]
+      summary: Create a new procedure
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProcedureRequest'
+      responses:
+        '201':
+          description: Procedure created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Procedure'
+        '400':
+          description: Validation error or missing fields
+        '401':
+          description: Unauthorized
+
+    get:
+      tags: [Procedure]
+      summary: Get all procedures
+      responses:
+        '200':
+          description: Array of procedures
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Procedure'
+        '500':
+          description: Server error
+
+  /procedures/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+
+    get:
+      tags: [Procedure]
+      summary: Get procedure by id
+      responses:
+        '200':
+          description: Procedure found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Procedure'
+        '404':
+          description: Procedure not found
+
+    post:
+      tags: [Procedure]
+      summary: Update a procedure (uses POST for updates)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProcedureRequest'
+      responses:
+        '200':
+          description: Updated procedure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Procedure'
+        '400':
+          description: Validation error
+        '401':
+          description: Unauthorized
+        '404':
+          description: Procedure not found
+
+  /procedures/{id}/delete:
+    post:
+      tags: [Procedure]
+      summary: Delete a procedure (uses POST for delete)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Procedure deleted (no content)
+        '401':
+          description: Unauthorized
+        '404':
+          description: Procedure not found
+
+tags:
+  - name: Procedure
+    description: Procedure management endpoints
+

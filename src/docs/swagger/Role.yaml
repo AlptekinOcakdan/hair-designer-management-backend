@@ -1,0 +1,155 @@
+openapi: 3.0.0
+info:
+  title: Role API
+  version: 1.0.0
+  description: Role management endpoints (create, update, list, get, delete)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Role:
+      type: object
+      properties:
+        id:
+          type: string
+        role:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    CreateRoleRequest:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+
+    UpdateRoleRequest:
+      type: object
+      properties:
+        role:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+paths:
+  /roles:
+    post:
+      tags: [Role]
+      summary: Create a new role
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRoleRequest'
+      responses:
+        '201':
+          description: Role created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+        '400':
+          description: Validation error
+        '401':
+          description: Unauthorized
+
+    get:
+      tags: [Role]
+      summary: Get all roles
+      responses:
+        '200':
+          description: Array of roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Role'
+        '500':
+          description: Server error
+
+  /roles/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+
+    get:
+      tags: [Role]
+      summary: Get role by id
+      responses:
+        '200':
+          description: Role found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+        '404':
+          description: Role not found
+
+    post:
+      tags: [Role]
+      summary: Update a role (uses POST for updates)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRoleRequest'
+      responses:
+        '200':
+          description: Updated role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+        '400':
+          description: Validation error
+        '401':
+          description: Unauthorized
+        '404':
+          description: Role not found
+
+  /roles/{id}/delete:
+    post:
+      tags: [Role]
+      summary: Delete a role (uses POST for delete)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Role deleted (no content)
+        '401':
+          description: Unauthorized
+        '404':
+          description: Role not found
+
+tags:
+  - name: Role
+    description: Role management endpoints
+

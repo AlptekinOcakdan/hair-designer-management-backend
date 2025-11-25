@@ -1,0 +1,226 @@
+openapi: 3.0.0
+info:
+  title: Permission API
+  version: 1.0.0
+  description: Permission management endpoints (create, update, list, get, relate to role, delete)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Permission:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+        description:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    CreatePermissionRequest:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+
+    UpdatePermissionRequest:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    RelateToRoleRequest:
+      type: object
+      required: [roleId, permissionId]
+      properties:
+        roleId:
+          type: string
+        permissionId:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        code:
+          type: integer
+
+paths:
+  /permissions:
+    post:
+      tags: [Permission]
+      summary: Create a new permission
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePermissionRequest'
+      responses:
+        '201':
+          description: Permission created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Permission'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+
+    get:
+      tags: [Permission]
+      summary: Get all permissions
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Array of permissions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Permission'
+        '401':
+          description: Unauthorized
+
+  /permissions/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+
+    get:
+      tags: [Permission]
+      summary: Get permission by id
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Permission found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Permission'
+        '404':
+          description: Permission not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+
+    post:
+      tags: [Permission]
+      summary: Update a permission (uses POST for updates)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePermissionRequest'
+      responses:
+        '200':
+          description: Updated permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Permission'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Permission not found
+
+  /permissions/relate/to-role:
+    post:
+      tags: [Permission]
+      summary: Relate a permission to a role (creates role-permission mapping and assigns permission to existing staff of the role)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RelateToRoleRequest'
+      responses:
+        '200':
+          description: Relation created and user permissions updated
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+
+  /permissions/{id}/delete:
+    post:
+      tags: [Permission]
+      summary: Delete a permission (uses POST for delete)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Permission deleted (no content)
+        '401':
+          description: Unauthorized
+        '404':
+          description: Permission not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+tags:
+  - name: Permission
+    description: Permission creation, retrieval, update, deletion and relating to roles
+

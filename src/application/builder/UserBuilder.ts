@@ -12,7 +12,7 @@ export class UserBuilder {
     private refreshToken: string = '';
     private TOSAccepted: boolean = false;
     private createdAt: Date = new Date();
-    private updatedAt: Date = new Date();
+    private updatedAt: Date | null = null;
 
     public setId(id: string): this {
         this.id = id;
@@ -69,7 +69,7 @@ export class UserBuilder {
         return this;
     }
 
-    public setUpdatedAt(updatedAt: Date): this {
+    public setUpdatedAt(updatedAt: Date| null): this {
         this.updatedAt = updatedAt;
         return this;
     }

@@ -5,7 +5,7 @@ export class UserBuilder {
     private firstname: string = '';
     private lastname: string = '';
     private email: string = '';
-    private phoneNumber: string = '';
+    private phoneNumber: string | null = null;
     private emailVerified: boolean = false;
     private phoneVerified: boolean = false;
     private refreshToken: string = '';
@@ -33,7 +33,7 @@ export class UserBuilder {
         return this;
     }
 
-    public setPhoneNumber(phoneNumber: string): this {
+    public setPhoneNumber(phoneNumber: string | null): this {
         this.phoneNumber = phoneNumber;
         return this;
     }

@@ -55,6 +55,8 @@ export interface IUserUseCase {
         reason: string
     ): Promise<void>;
 
+    createUser(userData: Partial<User>): Promise<User>;
+
     // Yeni metotlar:
     // 1) Salon personeli bir kullanıcı için yapılan prosedürü kaydeder (duration dakika, price)
     staffAddPerformedProcedure(
@@ -68,13 +70,16 @@ export interface IUserUseCase {
     // Her kayıt: staffId, firstname, lastname ve Procedure entity dizisi
     getStaffProceduresInSalon(salonId: string): Promise<Array<{ staffId: string; firstname: string; lastname: string; procedures: Procedure[] }>>;
 
+    getStaffAvailability(staffId: string, salonId: string, startDateStr: string, endDateStr: string): Promise<any[]>
+
     // 3) Kullanıcı bir randevu oluşturur; aynı randevuya birden fazla prosedür ekleyebilir
     bookAppointment(
         clientId: string,
         staffId: string,
         procedureIds: string[],
-        appointmentDate: string | Date
-    ): Promise<void>;
+        appointmentDate: string | Date,
+        salonId?: string // Opsiyonel parametre eklendi
+    ): Promise<void>
 
     // 4) Salon personeli, randevunun tamamlandığını işaretler
     completeAppointment(appointmentId: string, staffId: string): Promise<void>;
@@ -85,4 +90,26 @@ export interface IUserUseCase {
         userId: string,
         reason: string
     ): Promise<void>;
+
+    getStaffAppointments(staffId: string, date?: string | Date): Promise<any[]>
+
+    cancelAppointment(appointmentId: string, staffId: string, reason: string): Promise<void>
+
+    getStaffProcedures(staffId: string): Promise<any[]>
+
+    updateStaffProcedure(staffId: string, procedureId: string, duration: number, price: string): Promise<void>
+
+    removeStaffProcedure(staffId: string, procedureId: string): Promise<void>
+
+    getStaffSalons(userId: string): Promise<any[]>
+
+    getAllUsers(): Promise<User[]>;
+
+    getUserById(userId: string): Promise<User>;
+
+    updateUser(userId: string, updateData: Partial<User>): Promise<User>;
+
+    deleteUser(userId: string): Promise<void>;
+
+    getUsersByOrganisationId(organisationId: string): Promise<any[]>;
 }

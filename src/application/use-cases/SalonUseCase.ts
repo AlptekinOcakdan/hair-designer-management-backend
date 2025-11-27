@@ -6,9 +6,10 @@ import { SalonBuilder } from "../builder/SalonBuilder";
 export class SalonUseCase implements ISalonUseCase {
     constructor(private readonly salonRepository: ISalonRepository) {}
 
-    async create(organisationId: string, location: string): Promise<Salon> {
+    async create(organisationId: string, name: string, location: string): Promise<Salon> {
         const salon = new SalonBuilder()
             .setOrganisationId(organisationId)
+            .setName(name)
             .setLocation(location)
             .setCreatedAt(new Date())
             .setUpdatedAt(null)
@@ -38,4 +39,3 @@ export class SalonUseCase implements ISalonUseCase {
         await this.salonRepository.delete(id);
     }
 }
-

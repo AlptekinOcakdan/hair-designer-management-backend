@@ -4,7 +4,7 @@ export class User {
         public firstname: string,
         public lastname: string,
         public email: string,
-        public phoneNumber: string,
+        public phoneNumber: string | null,
         public emailVerified: boolean,
         public phoneVerified: boolean,
         public refreshToken: string,

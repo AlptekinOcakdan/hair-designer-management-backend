@@ -7,9 +7,10 @@ import {
     makeSignOptions
 } from "./constants";
 
-const generateAccessToken = (userId: string, rememberMe?: boolean) => {
+// Updated: Accepts roles array
+const generateAccessToken = (userId: string, roles: string[], rememberMe?: boolean) => {
     return jwt.sign(
-        { userId },
+        { userId, roles },
         ACCESS_TOKEN_SECRET,
         makeSignOptions(rememberMe ? REFRESH_TOKEN_EXPIRY : ACCESS_TOKEN_EXPIRY)
     );

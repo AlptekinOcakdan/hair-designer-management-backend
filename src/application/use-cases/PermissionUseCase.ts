@@ -9,11 +9,11 @@ export class PermissionUseCase implements IPermissionUseCase {
         private permissionRepository: IPermissionRepository,
     ) {}
 
-    async create(name: string): Promise<Permission> {
+    async create(name: string, description: string): Promise<Permission> {
         const permission = new PermissionBuilder()
             .setId(randomUUID())
             .setAction(name)
-            .setDescription('')
+            .setDescription(description)
             .setCreatedAt(new Date())
             .setUpdatedAt(null)
             .build();

@@ -71,7 +71,7 @@ const startApplication = async () => {
 
     // USE CASES
     const userUseCase = new UserUseCase(userRepository, salonStaffRepository, roleRepository, salonRepository, userStaffAppointmentRepository, mailService, staffProcedureRepository, procedureRepository, userRoleRepository, userPermissionRepository, rolePermissionRepository);
-    const authUseCase = new AuthUseCase(userRepository, hashService, mailService, otpRepository);
+    const authUseCase = new AuthUseCase(userRepository, hashService, mailService, otpRepository, userRoleRepository, roleRepository);
     const organisationUseCase = new OrganisationUseCase(organisationRepository, salonRepository, salonStaffRepository, userStaffAppointmentRepository, staffProcedureRepository);
     const salonUseCase = new SalonUseCase(salonRepository);
     const procedureUseCase = new ProcedureUseCase(procedureRepository);

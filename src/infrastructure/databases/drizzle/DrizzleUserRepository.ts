@@ -20,7 +20,7 @@ export class DrizzleUserRepository implements IUserRepository {
             firstname: user.firstname,
             lastname: user.lastname,
             email: user.email,
-            phoneNumber: user.phoneNumber,
+            phoneNumber: user.phoneNumber ?? undefined,
             refreshToken: user.refreshToken,
             createdAt: user.createdAt ? user.createdAt : undefined,
             updatedAt: user.updatedAt ? user.updatedAt : undefined,
@@ -93,8 +93,9 @@ export class DrizzleUserRepository implements IUserRepository {
     // --- READ ALL (Tümünü Getir) ---
     // NOT: Interface'inde UserDocument[] döneceğini belirtmişsin.
     // Genelde burası da User[] (Domain Entity) döner ama isteğine sadık kalarak raw data dönüyorum.
-    async findAll(): Promise<UserDocument[]> {
-        return this.db.select().from(this.table);
+    async findAll(): Promise<User[]> {
+        const userDocs = await this.db.select().from(this.table);
+        return userDocs.map(doc => this.toDomain(doc));
     }
 
     // --- UPDATE (Güncelleme) ---
@@ -123,5 +124,11 @@ export class DrizzleUserRepository implements IUserRepository {
         await this.db
             .delete(this.table)
             .where(eq(this.table.id, id));
+    }
+
+    async deleteUser(userId: string): Promise<void> {
+        await this.db
+            .delete(this.table)
+            .where(eq(this.table.id, userId));
     }
 }

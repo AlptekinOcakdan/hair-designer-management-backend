@@ -14,13 +14,17 @@ import {IOTPRepository} from "../../domain/repositories/IOTPRepository";
 import {generateOTP, getOTPExpiration} from "../../interfaces/utils/OTPUtils";
 import {OTP} from "../../domain/entities/OTP";
 import {randomUUID} from "crypto";
+import {IUserRoleRepository} from "../../domain/repositories/IUserRoleRepository";
+import {IRoleRepository} from "../../domain/repositories/IRoleRepository";
 
 export class AuthUseCase implements IAuthUseCase {
     constructor(
         private readonly userRepository: IUserRepository,
         private readonly hashService: IHashService,
         private readonly mailService: IMailService,
-        private readonly otpRepository: IOTPRepository
+        private readonly otpRepository: IOTPRepository,
+        private readonly userRoleRepository: IUserRoleRepository,
+        private readonly roleRepository: IRoleRepository,
     ) {
     }
 
@@ -114,8 +118,16 @@ export class AuthUseCase implements IAuthUseCase {
         otpRecord.isValidated = true;
         await this.otpRepository.update(otpRecord);
 
-        // 3. Token'ları oluştur
-        const accessToken = generateAccessToken(user.id!, rememberMe);
+        // --- ROL ÇEKME İŞLEMİ ---
+        const userRoles = await this.userRoleRepository.findByUserId(user.id!);
+        const roles = await Promise.all(userRoles.map(async (ur) => {
+            const role = await this.roleRepository.findById(ur.roleId);
+            return role ? role.role : null;
+        }));
+        const validRoles = roles.filter((r): r is string => r !== null);
+
+        // 3. Token'ları oluştur (Roller ile)
+        const accessToken = generateAccessToken(user.id!, validRoles, rememberMe);
         const refreshToken = generateRefreshToken(user.id!);
 
         // 4. Refresh token'ı kullanıcıya işle
@@ -151,8 +163,16 @@ export class AuthUseCase implements IAuthUseCase {
             throw new Error("Invalid refresh token reuse detected");
         }
 
+        // --- ROL ÇEKME İŞLEMİ ---
+        const userRoles = await this.userRoleRepository.findByUserId(user.id!);
+        const roles = await Promise.all(userRoles.map(async (ur) => {
+            const role = await this.roleRepository.findById(ur.roleId);
+            return role ? role.role : null;
+        }));
+        const validRoles = roles.filter((r): r is string => r !== null);
+
         // 4. Token Rotasyonu: Her yenilemede YENİ refresh token üret
-        const newAccessToken = generateAccessToken(user.id!);
+        const newAccessToken = generateAccessToken(user.id!, validRoles);
         const newRefreshToken = generateRefreshToken(user.id!);
 
         // 5. Yeni token'ı veritabanına işle

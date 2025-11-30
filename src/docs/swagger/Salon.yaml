@@ -17,6 +17,8 @@ components:
       properties:
         id:
           type: string
+        name:
+          type: string
         organisationId:
           type: string
         location:
@@ -31,9 +33,11 @@ components:
 
     CreateSalonRequest:
       type: object
-      required: [organisationId, location]
+      required: [organisationId, name, location]
       properties:
         organisationId:
+          type: string
+        name:
           type: string
         location:
           type: string
@@ -41,6 +45,8 @@ components:
     UpdateSalonRequest:
       type: object
       properties:
+        name:
+          type: string
         organisationId:
           type: string
         location:

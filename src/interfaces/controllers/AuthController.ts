@@ -12,15 +12,6 @@ export class AuthController {
         void this.server;
     }
 
-    private setCookie(res: Response, token: string) {
-        res.cookie('refreshToken', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 30 * 24 * 60 * 60 * 1000
-        });
-    }
-
     async register(req:Request, res:Response, next:NextFunction): Promise<void> {
         try {
             const {
@@ -49,7 +40,7 @@ export class AuthController {
 
     async login(req:Request, res:Response, next:NextFunction): Promise<void> {
         try {
-            const { email, rememberMe } = req.body;
+            const { email } = req.body;
 
             const result = await this.authUseCase.login(email);
 
@@ -68,8 +59,6 @@ export class AuthController {
             const { email, otpCode, rememberMe } = req.body;
 
             const result = await this.authUseCase.verifyOTP(email, otpCode, rememberMe);
-
-            this.setCookie(res, result.refreshToken);
 
             res.status(200).json({
                 user: result.user,

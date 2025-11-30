@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: Auth API
   version: 1.0.0
-  description: Authentication endpoints (register, login, logout, token refresh, password reset, verification)
+  description: Authentication endpoints (register, login, logout, token refresh, OTP verification, phone verification)
 
 components:
   securitySchemes:
@@ -71,6 +71,8 @@ components:
           $ref: '#/components/schemas/User'
         accessToken:
           type: string
+        refreshToken:
+          type: string
 
     VerifyOTPRequest:
       type: object
@@ -94,27 +96,10 @@ components:
         refreshToken:
           type: string
 
-    ForgotPasswordRequest:
+    LogoutRequest:
       type: object
       properties:
-        email:
-          type: string
-          format: email
-
-    ResetPasswordRequest:
-      type: object
-      properties:
-        token:
-          type: string
-        newPassword:
-          type: string
-
-    ChangePasswordRequest:
-      type: object
-      properties:
-        currentPassword:
-          type: string
-        newPassword:
+        refreshToken:
           type: string
 
     VerifyRequest:
@@ -123,18 +108,12 @@ components:
         token:
           type: string
 
-    LogoutRequest:
-      type: object
-      properties:
-        refreshToken:
-          type: string
-
 paths:
   /auth/register:
     post:
       tags: [Auth]
       summary: Start user registration with OTP
-      description: Creates a new user and sends a one-time password (OTP) to their email to start the verification process.
+      description: Creates a new user record and sends a one-time password (OTP) to their email to start the verification process.
       requestBody:
         required: true
         content:
@@ -176,7 +155,7 @@ paths:
                   user:
                     $ref: '#/components/schemas/User'
         '401':
-          description: Invalid credentials (user not found)
+          description: User not found
 
   /auth/verify-otp:
     post:
@@ -237,68 +216,6 @@ paths:
                     type: string
         '401':
           description: Invalid or expired refresh token
-
-  /auth/forgot-password:
-    post:
-      tags: [Auth]
-      summary: Request password reset email
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ForgotPasswordRequest'
-      responses:
-        '204':
-          description: If email exists, reset link sent (no enumeration)
-
-  /auth/reset-password:
-    post:
-      tags: [Auth]
-      summary: Reset password using token
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ResetPasswordRequest'
-      responses:
-        '204':
-          description: Password reset successful
-        '400':
-          description: Invalid or expired token
-
-  /auth/change-password:
-    post:
-      tags: [Auth]
-      summary: Change password for authenticated user
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ChangePasswordRequest'
-      responses:
-        '204':
-          description: Password changed successfully
-        '401':
-          description: Unauthorized or incorrect current password
-
-  /auth/verify-email:
-    post:
-      tags: [Auth]
-      summary: Verify user email using token
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/VerifyRequest'
-      responses:
-        '204':
-          description: Email verified
 
   /auth/verify-phone-number:
     post:

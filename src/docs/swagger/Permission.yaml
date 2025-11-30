@@ -32,9 +32,11 @@ components:
 
     CreatePermissionRequest:
       type: object
-      required: [action]
+      required: [action, description]
       properties:
         action:
+          type: string
+        description:
           type: string
 
     UpdatePermissionRequest:

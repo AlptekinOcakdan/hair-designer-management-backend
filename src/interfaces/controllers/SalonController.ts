@@ -10,9 +10,9 @@ export class SalonController {
 
     async create(req: ExpressRequestInterface, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { organisationId, location } = req.body;
+            const { organisationId, name, location } = req.body;
             // yetki kontrolü AuthMiddleware ile yapılır; req.user mevcut kabul edilir
-            const salon = await this.salonUseCase.create(organisationId, location);
+            const salon = await this.salonUseCase.create(organisationId, name, location);
             res.status(201).json(salon);
         } catch (e) {
             logger.error("Salon create method:\n", e);
@@ -23,10 +23,11 @@ export class SalonController {
     async update(req: ExpressRequestInterface, res: Response, next: NextFunction): Promise<void> {
         try {
             const { id } = req.params;
-            const { location, organisationId, createdAt } = req.body;
+            const { name, location, organisationId, createdAt } = req.body;
             // updatedAt controller/use-case tarafından setlenir
             const salonEntity = new SalonBuilder()
                 .setId(id)
+                .setName(name)
                 .setLocation(location)
                 .setOrganisationId(organisationId)
                 .setCreatedAt(createdAt ? new Date(createdAt) : new Date())

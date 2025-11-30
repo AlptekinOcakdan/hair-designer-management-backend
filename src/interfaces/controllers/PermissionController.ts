@@ -9,8 +9,8 @@ export class PermissionController {
     // Create -> kullanıcının gönderdiği 'action' ile yeni permission oluşturur
     async create(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { action } = req.body;
-            const created = await this.permissionUseCase.create(action);
+            const { action, description } = req.body;
+            const created = await this.permissionUseCase.create(action, description || '');
             res.status(201).json(created);
         } catch (error) {
             next(error);

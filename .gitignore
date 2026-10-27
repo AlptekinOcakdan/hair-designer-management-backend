@@ -6,3 +6,7 @@ node_modules/
 .env*
 .DS_Store
 dist/
+
+# env files with secrets (development.env was committed by mistake)
+development.env
+*.env

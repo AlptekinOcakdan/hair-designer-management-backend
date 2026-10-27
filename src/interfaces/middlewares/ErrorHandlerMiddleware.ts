@@ -13,7 +13,7 @@ export const errorHandlerMiddleware = (
 ) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || "Something went wrong";
-  const stack = process.env.NODE_ENV !== "production" ? err.stack : {};
+  const stack = process.env.NODE_ENV === "development" ? err.stack : {};
 
   logger.error(
     `

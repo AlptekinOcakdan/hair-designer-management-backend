@@ -4,7 +4,8 @@ import logger from "../../../interfaces/logger/Logger";
 import {EMAIL_HOST, EMAIL_PORT, SENDER_EMAIL, SENDER_EMAIL_PASSWORD} from "../../../interfaces/utils/constants";
 
 export class NodemailerService implements IMailService{
-    private transporter: nodemailer.Transporter;
+    // nodemailer 10 ships its own types without a Transporter export
+    private transporter: ReturnType<typeof nodemailer.createTransport>;
 
     constructor() {
         this.transporter = nodemailer.createTransport({
